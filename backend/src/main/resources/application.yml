@@ -1,0 +1,82 @@
+spring:
+  application:
+    name: words
+  threads:
+    virtual:
+      enabled: true
+
+  # Values come from the environment or the repo-root .env (see DotEnv).
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    hikari:
+      # Neon is serverless and can scale to zero: keep the pool small, let it go fully idle,
+      # and give the first connection after a cold start time to wake the compute.
+      maximum-pool-size: 5
+      minimum-idle: 0
+      idle-timeout: 120000
+      max-lifetime: 600000
+      connection-timeout: 30000
+      validation-timeout: 5000
+
+  flyway:
+    # Migrations must run against the DIRECT (non-pooler) Neon host. If the app itself uses the
+    # pooler, set SPRING_FLYWAY_URL to the direct JDBC URL; otherwise this falls back to the datasource.
+    url: ${SPRING_FLYWAY_URL:${SPRING_DATASOURCE_URL}}
+    user: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    locations: classpath:db/migration
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  mvc:
+    problemdetails:
+      enabled: true
+
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 25MB
+
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+  error:
+    include-stacktrace: never
+    include-message: never
+
+app:
+  public-url: ${APP_PUBLIC_URL:http://localhost:5173}
+  upload-dir: ${UPLOAD_DIR:./uploads}
+  timezone: Asia/Kolkata
+  owner:
+    email: ${OWNER_EMAIL}
+    password-hash: ${OWNER_PASSWORD_HASH}
+  jwt:
+    secret: ${JWT_SECRET}
+    ttl: 14d
+  cookie:
+    name: words_session
+    secure: ${COOKIE_SECURE:true}
+  login-rate-limit:
+    max-attempts: 5
+    window: 15m
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  paths-to-match: /api/**
+
+logging:
+  level:
+    org.hibernate.SQL: warn

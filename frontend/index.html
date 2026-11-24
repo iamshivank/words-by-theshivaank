@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en" data-theme="noir">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="Words, by theshivaank. Essays and a daily writing practice."
+    />
+    <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f7f5f0" media="(prefers-color-scheme: light)" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Words · By theshivaank</title>
+    <script>
+      // Apply the saved theme before first paint so there is no flash of the wrong one.
+      (function () {
+        try {
+          var saved = JSON.parse(localStorage.getItem('words-appearance') || 'null');
+          var state = (saved && saved.state) || {};
+          var theme = state.preference || 'noir';
+          if (theme === 'system') {
+            theme = matchMedia('(prefers-color-scheme: light)').matches ? 'paper' : 'noir';
+          }
+          var root = document.documentElement;
+          root.dataset.theme = theme;
+          if (typeof state.accentHue === 'number') {
+            root.dataset.accentHue = '';
+            root.style.setProperty('--accent-hue', String(state.accentHue));
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

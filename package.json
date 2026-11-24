@@ -1,0 +1,8 @@
+{
+  "name": "words-by-theshivaank",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "api:types": "npm --prefix frontend run api:types"
+  }
+}

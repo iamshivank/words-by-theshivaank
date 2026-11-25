@@ -61,6 +61,20 @@ public class FeedController {
         return ResponseEntity.ok().cacheControl(CacheControl.maxAge(Duration.ofMinutes(10)).cachePublic()).body(xml.toString());
     }
 
+    /** Served here rather than as a static file because the Sitemap line must be an absolute URL. */
+    @GetMapping(value = "/robots.txt", produces = "text/plain;charset=UTF-8")
+    public ResponseEntity<String> robots() {
+        String body = """
+                User-agent: *
+                Allow: /
+                Disallow: /desk
+                Disallow: /login
+
+                Sitemap: %s/sitemap.xml
+                """.formatted(base);
+        return ResponseEntity.ok().cacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePublic()).body(body);
+    }
+
     @GetMapping(value = {"/sitemap.xml", "/api/v1/public/sitemap.xml"}, produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<String> sitemap() {
         StringBuilder xml = new StringBuilder("""

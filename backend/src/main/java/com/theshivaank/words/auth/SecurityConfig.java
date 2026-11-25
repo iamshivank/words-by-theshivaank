@@ -47,7 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/public/entries/*/view").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/uploads/**", "/rss.xml", "/sitemap.xml").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/uploads/**", "/rss.xml", "/sitemap.xml", "/robots.txt").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().hasAuthority(JwtCookieAuthFilter.ROLE_OWNER))
@@ -63,7 +63,8 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource(AppProperties props) {
         CorsConfiguration cors = new CorsConfiguration();
-        cors.setAllowedOrigins(List.of(props.publicUrl()));
+        // Browsers send Origin without a trailing slash; tolerate APP_PUBLIC_URL being pasted with one.
+        cors.setAllowedOrigins(List.of(props.publicUrl().replaceAll("/+$", "")));
         cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cors.setAllowedHeaders(List.of("Content-Type", "Accept"));
         cors.setAllowCredentials(true);

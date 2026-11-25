@@ -15,7 +15,7 @@ export default defineConfig({
     // is dropped because proxied calls are same-origin by construction; otherwise a dev server that
     // moved to another port (5173 taken) would be refused by the API's CORS check.
     proxy: Object.fromEntries(
-      ['/api', '/uploads', '/rss.xml', '/sitemap.xml'].map((path) => [
+      ['/api', '/uploads', '/rss.xml', '/sitemap.xml', '/robots.txt'].map((path) => [
         path,
         {
           target: `http://localhost:${process.env.API_PORT ?? '8080'}`,

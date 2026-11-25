@@ -1,0 +1,19 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "routes": [
+    {
+      "src": "/assets/(.*)",
+      "headers": { "cache-control": "public, max-age=31536000, immutable" },
+      "continue": true
+    },
+    { "src": "/api/(.*)", "dest": "${BACKEND_URL}/api/$1", "env": ["BACKEND_URL"] },
+    { "src": "/uploads/(.*)", "dest": "${BACKEND_URL}/uploads/$1", "env": ["BACKEND_URL"] },
+    {
+      "src": "/(rss\\.xml|sitemap\\.xml|robots\\.txt)",
+      "dest": "${BACKEND_URL}/$1",
+      "env": ["BACKEND_URL"]
+    },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}

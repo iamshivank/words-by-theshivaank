@@ -166,12 +166,19 @@ Code to "use the product-strategist agent" with a question, e.g. "what should I 
 - Every error is RFC 9457 problem JSON.
 - Logging out clears the cookie; the token itself expires after 14 days.
 
+## Deploy
+
+Frontend on Vercel, API on Railway (Docker, `backend/Dockerfile`), database on Neon. Vercel proxies
+`/api`, `/uploads`, `/rss.xml`, `/sitemap.xml` and `/robots.txt` to the API (`frontend/vercel.json`), so the
+browser sees one origin and the SameSite=Strict session cookie keeps working. Step by step:
+[docs/DEPLOY.md](docs/DEPLOY.md).
+
 ## Known gaps before a public launch
 
 - Social previews: the site is a client-rendered SPA, so link previews (Open Graph) need server-rendered
   meta tags for `/writing/:slug`. Meta tags are set in the browser, which search engines read but most
   social crawlers do not.
-- Uploads live on the server's disk (`UPLOAD_DIR`); most hosts wipe it on deploy. Move to object storage
-  before deploying.
+- Uploads live on the server's disk (`UPLOAD_DIR`). In production that is a Railway volume mounted at
+  `/data` (see [docs/DEPLOY.md](docs/DEPLOY.md)); without the volume every deploy wipes them.
 - No footnotes block in the editor yet.
 See `docs/ideas/IDEAS.md` for the full launch checklist.

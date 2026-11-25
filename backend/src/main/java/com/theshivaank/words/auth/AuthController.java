@@ -1,6 +1,7 @@
 package com.theshivaank.words.auth;
 
-import com.theshivaank.words.config.AppProperties;
+import com.theshivaank.words.account.OwnerAccountService;
+import com.theshivaank.words.account.SessionCookies;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -9,9 +10,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import java.time.Duration;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,11 +31,13 @@ public class AuthController {
     public record Me(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean authenticated, String email) {}
 
     private final AuthService authService;
-    private final AppProperties props;
+    private final OwnerAccountService accounts;
+    private final SessionCookies cookies;
 
-    public AuthController(AuthService authService, AppProperties props) {
+    public AuthController(AuthService authService, OwnerAccountService accounts, SessionCookies cookies) {
         this.authService = authService;
-        this.props = props;
+        this.accounts = accounts;
+        this.cookies = cookies;
     }
 
     @Operation(summary = "Sign in as the owner. Sets the httpOnly session cookie.")
@@ -44,33 +45,24 @@ public class AuthController {
     public ResponseEntity<Me> login(@Valid @RequestBody LoginRequest body, HttpServletRequest request) {
         String token = authService.login(body.email(), body.password(), request.getRemoteAddr());
         return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, sessionCookie(token, props.jwt().ttl()).toString())
-                .body(new Me(true, props.owner().email()));
+                .header(HttpHeaders.SET_COOKIE, cookies.issue(token))
+                .body(new Me(true, accounts.snapshot().email()));
     }
 
     @Operation(summary = "Sign out. Clears the session cookie.")
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
-        return ResponseEntity.noContent()
-                .header(HttpHeaders.SET_COOKIE, sessionCookie("", Duration.ZERO).toString())
-                .build();
+        return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, cookies.clear()).build();
     }
 
     @Operation(summary = "Who is signed in. Always 200; `authenticated` is false for visitors.")
     @GetMapping("/me")
     public Me me(Authentication authentication) {
-        boolean owner = authentication != null && authentication.getAuthorities().stream()
-                .anyMatch(a -> JwtCookieAuthFilter.ROLE_OWNER.equals(a.getAuthority()));
-        return owner ? new Me(true, props.owner().email()) : new Me(false, null);
+        return isOwner(authentication) ? new Me(true, accounts.snapshot().email()) : new Me(false, null);
     }
 
-    private ResponseCookie sessionCookie(String value, Duration maxAge) {
-        return ResponseCookie.from(props.cookie().name(), value)
-                .httpOnly(true)
-                .secure(props.cookie().secure())
-                .sameSite("Strict")
-                .path("/")
-                .maxAge(maxAge)
-                .build();
+    public static boolean isOwner(Authentication authentication) {
+        return authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> JwtCookieAuthFilter.ROLE_OWNER.equals(a.getAuthority()));
     }
 }

@@ -20,7 +20,8 @@ public record AppProperties(
         @Valid @NotNull Cookie cookie,
         @Valid @NotNull LoginRateLimit loginRateLimit) {
 
-    public record Owner(@NotBlank String email, @NotBlank String passwordHash) {}
+    /** resetFromEnv: on the next start, overwrite the stored account with these values. */
+    public record Owner(@NotBlank String email, @NotBlank String passwordHash, boolean resetFromEnv) {}
 
     public record Jwt(@NotBlank String secret, @NotNull Duration ttl) {}
 

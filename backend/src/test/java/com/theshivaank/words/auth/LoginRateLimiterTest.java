@@ -24,7 +24,7 @@ class LoginRateLimiterTest {
 
     private static AppProperties props(int max, Duration window) {
         return new AppProperties("http://localhost:5173", "./uploads", ZoneId.of("Asia/Kolkata"),
-                new AppProperties.Owner("me@example.com", "hash"),
+                new AppProperties.Owner("me@example.com", "hash", false),
                 new AppProperties.Jwt("x".repeat(32), Duration.ofDays(1)),
                 new AppProperties.Cookie("words_session", true),
                 new AppProperties.LoginRateLimit(max, window));

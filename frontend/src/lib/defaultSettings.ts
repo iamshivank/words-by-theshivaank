@@ -1,8 +1,25 @@
-import type { PublicSettings } from '@/api/types';
+import type { Preferences, PublicSettings } from '@/api/types';
+
+export const DEFAULT_PREFERENCES: Preferences = {
+  customCursor: true,
+  grain: true,
+  smoothScroll: true,
+  flyingPosts: true,
+  readingProgress: true,
+  dropCap: true,
+  tableOfContents: true,
+  showReadCounts: false,
+  showStreakOnLanding: true,
+  rssFeed: true,
+  editorQuotes: true,
+  typewriterScrolling: true,
+  dictation: true,
+  dailyPrompt: true,
+};
 
 /**
  * Used only until the server's settings arrive (or if it is unreachable).
- * Mirrors the seed in backend V2__default_site_settings.sql; the real values live in the database.
+ * Mirrors the seed in backend V2/V3 migrations; the real values live in the database.
  */
 export const DEFAULT_SETTINGS: PublicSettings = {
   siteName: 'Words',
@@ -16,8 +33,10 @@ export const DEFAULT_SETTINGS: PublicSettings = {
   landing: {
     sections: [
       { id: 'hero', enabled: true },
+      { id: 'flying', enabled: true },
       { id: 'latest', enabled: true },
       { id: 'about', enabled: true },
     ],
   },
+  preferences: DEFAULT_PREFERENCES,
 };

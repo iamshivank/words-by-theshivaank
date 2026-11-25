@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './tokens.css';
+@import './content.css';
 
 /*
  * Tailwind is reset to this design system only: the default palette, radii and shadows are removed,
@@ -244,53 +245,176 @@
     background-size: 240px 240px;
   }
 
-  /* ---- Cursor ----------------------------------------------------------- */
-  .cursor-dot,
-  .cursor-ring {
+  /* ---- Cursor: one element locked to the pointer; dot + ring, morphing into an ink pen --- */
+  .ink-cursor {
     position: fixed;
     top: 0;
     left: 0;
     z-index: 100;
+    width: 0;
+    height: 0;
     pointer-events: none;
-    border-radius: 9999px;
     opacity: 0;
     will-change: transform;
-    transition:
-      opacity var(--dur-quick) var(--ease-editorial),
-      scale var(--dur-calm) var(--ease-editorial),
-      border-color var(--dur-calm) var(--ease-editorial),
-      background-color var(--dur-calm) var(--ease-editorial);
+    transition: opacity var(--dur-quick) var(--ease-editorial);
   }
-  .cursor-dot {
+  .ink-cursor[data-visible='true'] {
+    opacity: 1;
+  }
+  .ink-cursor[data-state='text'] {
+    opacity: 0;
+  }
+  .ink-cursor__ring,
+  .ink-cursor__dot,
+  .ink-cursor__drop {
+    position: absolute;
+    border-radius: 9999px;
+    transition:
+      scale 520ms var(--ease-editorial),
+      opacity 420ms var(--ease-editorial),
+      background-color var(--dur-calm) var(--ease-editorial),
+      border-color var(--dur-calm) var(--ease-editorial);
+  }
+  .ink-cursor__ring {
+    width: 30px;
+    height: 30px;
+    margin: -15px 0 0 -15px;
+    border: 1px solid var(--accent-line);
+  }
+  .ink-cursor__dot {
     width: 6px;
     height: 6px;
     margin: -3px 0 0 -3px;
     background-color: var(--accent);
   }
-  .cursor-ring {
-    width: 34px;
-    height: 34px;
-    margin: -17px 0 0 -17px;
-    border: 1px solid var(--accent-line);
+  .ink-cursor__drop {
+    width: 4px;
+    height: 4px;
+    margin: -2px 0 0 -2px;
+    background-color: var(--accent);
+    opacity: 0;
+    scale: 0;
   }
-  .cursor-dot[data-visible='true'],
-  .cursor-ring[data-visible='true'] {
+  .ink-cursor__pen {
+    position: absolute;
+    left: -12px;
+    top: -1px;
+    overflow: visible;
+    transform-origin: 12px 1px;
+    rotate: -178deg;
+    scale: 0.5;
+    opacity: 0;
+    transition:
+      rotate 560ms var(--ease-editorial),
+      scale 560ms var(--ease-editorial),
+      opacity 300ms var(--ease-editorial),
+      translate 260ms var(--ease-editorial);
+  }
+  .ink-cursor__nib,
+  .ink-cursor__slit,
+  .ink-cursor__grip {
+    stroke-width: 1.1;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    transition:
+      stroke-dashoffset 620ms var(--ease-editorial),
+      fill-opacity 400ms var(--ease-editorial);
+  }
+  .ink-cursor__nib {
+    stroke: var(--accent);
+    fill: color-mix(in oklab, var(--accent) 22%, var(--bg));
+    fill-opacity: 0;
+  }
+  .ink-cursor__slit {
+    stroke: var(--accent);
+  }
+  .ink-cursor__grip {
+    stroke: var(--text);
+    fill: var(--bg);
+    fill-opacity: 0;
+    transition-delay: 80ms;
+  }
+  .ink-cursor__vent {
+    fill: var(--accent);
+    opacity: 0;
+    transition: opacity 300ms var(--ease-editorial) 220ms;
+  }
+
+  /* Over links and buttons: the ring folds into the tip and the pen turns in, drawing itself. */
+  .ink-cursor[data-state='link'] .ink-cursor__ring {
+    scale: 0.12;
+    opacity: 0;
+  }
+  .ink-cursor[data-state='link'] .ink-cursor__dot {
+    scale: 0;
+    opacity: 0;
+  }
+  .ink-cursor[data-state='link'] .ink-cursor__drop {
+    scale: 1;
+    opacity: 1;
+    animation: ink-drop 1.8s var(--ease-settle) infinite;
+  }
+  .ink-cursor[data-state='link'] .ink-cursor__pen {
+    rotate: -135deg;
+    scale: 1;
     opacity: 1;
   }
-  .cursor-ring[data-state='link'] {
-    scale: 1.55;
-    border-color: var(--accent);
-    background-color: var(--accent-soft);
+  .ink-cursor[data-state='link'] :is(.ink-cursor__nib, .ink-cursor__slit, .ink-cursor__grip) {
+    stroke-dashoffset: 0;
+    fill-opacity: 1;
   }
-  .cursor-dot[data-state='link'] {
-    scale: 0.5;
+  .ink-cursor[data-state='link'] .ink-cursor__vent {
+    opacity: 1;
   }
-  .cursor-ring[data-pressed='true'] {
-    scale: 0.8;
+  .ink-cursor[data-state='link'][data-pressed='true'] .ink-cursor__pen {
+    rotate: -124deg;
+    scale: 0.94;
+    translate: -1px 1px;
   }
-  .cursor-dot[data-state='text'],
-  .cursor-ring[data-state='text'] {
-    opacity: 0;
+  .ink-cursor[data-state='idle'][data-pressed='true'] .ink-cursor__ring {
+    scale: 0.78;
+  }
+
+  @keyframes ink-drop {
+    0%,
+    100% {
+      scale: 1;
+    }
+    50% {
+      scale: 1.5;
+    }
+  }
+
+  .ink-blots {
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+    pointer-events: none;
+  }
+  .ink-blot {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    margin: -7px 0 0 -7px;
+    border-radius: 48% 52% 44% 56% / 55% 45% 55% 45%;
+    background: radial-gradient(
+      circle at 40% 40%,
+      var(--accent),
+      color-mix(in oklab, var(--accent) 40%, transparent) 70%
+    );
+    animation: ink-blot 900ms var(--ease-editorial) forwards;
+  }
+  @keyframes ink-blot {
+    from {
+      scale: 0.2;
+      opacity: 0.55;
+    }
+    to {
+      scale: 2.6;
+      opacity: 0;
+    }
   }
 
   /* ---- Range: a hairline track with a small accent thumb ---------------- */

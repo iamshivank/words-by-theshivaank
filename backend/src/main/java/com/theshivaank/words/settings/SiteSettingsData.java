@@ -18,7 +18,8 @@ public record SiteSettingsData(
         Hero hero,
         Appearance appearance,
         Writing writing,
-        Landing landing) {
+        Landing landing,
+        Preferences preferences) {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record SocialLink(
@@ -52,15 +53,53 @@ public record SiteSettingsData(
             @Schema(requiredMode = REQUIRED) String id,
             @Schema(requiredMode = REQUIRED) boolean enabled) {}
 
+    /** On/off switches from the admin panel's Preferences tab. A missing switch takes its default. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Preferences(
+            Boolean customCursor,
+            Boolean grain,
+            Boolean smoothScroll,
+            Boolean flyingPosts,
+            Boolean readingProgress,
+            Boolean dropCap,
+            Boolean tableOfContents,
+            Boolean showReadCounts,
+            Boolean showStreakOnLanding,
+            Boolean rssFeed,
+            Boolean editorQuotes,
+            Boolean typewriterScrolling,
+            Boolean dictation,
+            Boolean dailyPrompt) {
+
+        public static Preferences defaults() {
+            return new Preferences(true, true, true, true, true, true, true, false, true, true, true, true, true, true);
+        }
+
+        Preferences withDefaults() {
+            Preferences d = defaults();
+            return new Preferences(
+                    or(customCursor, d.customCursor), or(grain, d.grain), or(smoothScroll, d.smoothScroll),
+                    or(flyingPosts, d.flyingPosts), or(readingProgress, d.readingProgress), or(dropCap, d.dropCap),
+                    or(tableOfContents, d.tableOfContents), or(showReadCounts, d.showReadCounts),
+                    or(showStreakOnLanding, d.showStreakOnLanding), or(rssFeed, d.rssFeed),
+                    or(editorQuotes, d.editorQuotes), or(typewriterScrolling, d.typewriterScrolling),
+                    or(dictation, d.dictation), or(dailyPrompt, d.dailyPrompt));
+        }
+
+        private static Boolean or(Boolean value, Boolean fallback) {
+            return value != null ? value : fallback;
+        }
+    }
+
+    public static final List<String> LANDING_SECTION_IDS = List.of("hero", "flying", "latest", "about");
+
     public static SiteSettingsData defaults() {
         return new SiteSettingsData(
                 "Words", "By theshivaank", "A quiet place to think in sentences.", "Shivank", "", List.of(),
                 new Hero(null, 0.55, 0.06),
                 new Appearance("noir", null, "serif", 19),
                 new Writing(500, "A few honest sentences are enough."),
-                new Landing(List.of(
-                        new LandingSection("hero", true),
-                        new LandingSection("latest", true),
-                        new LandingSection("about", true))));
+                new Landing(LANDING_SECTION_IDS.stream().map(id -> new LandingSection(id, true)).toList()),
+                Preferences.defaults());
     }
 }

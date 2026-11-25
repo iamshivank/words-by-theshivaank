@@ -36,6 +36,8 @@ spring:
       hibernate:
         jdbc:
           time_zone: UTC
+        # Tags and other small collections load in batches instead of one query per row.
+        default_batch_fetch_size: 50
 
   mvc:
     problemdetails:
@@ -55,11 +57,13 @@ server:
 
 app:
   public-url: ${APP_PUBLIC_URL:http://localhost:5173}
+  version: '@project.version@'
   upload-dir: ${UPLOAD_DIR:./uploads}
   timezone: Asia/Kolkata
   owner:
     email: ${OWNER_EMAIL}
     password-hash: ${OWNER_PASSWORD_HASH}
+    reset-from-env: ${OWNER_RESET_FROM_ENV:false}
   jwt:
     secret: ${JWT_SECRET}
     ttl: 14d

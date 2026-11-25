@@ -21,6 +21,7 @@
         <java.version>25</java.version>
         <springdoc.version>3.2.1</springdoc.version>
         <jsoup.version>1.24.1</jsoup.version>
+        <commonmark.version>0.25.0</commonmark.version>
         <embedded-postgres.version>2.2.3</embedded-postgres.version>
         <embedded-postgres-binaries.version>17.12.0</embedded-postgres-binaries.version>
     </properties>
@@ -81,6 +82,12 @@
             <artifactId>jsoup</artifactId>
             <version>${jsoup.version}</version>
         </dependency>
+        <!-- Markdown import -->
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark</artifactId>
+            <version>${commonmark.version}</version>
+        </dependency>
 
         <!-- Tests: embedded Postgres runs real Postgres binaries without Docker. -->
         <dependency>
@@ -115,6 +122,16 @@
                 <configuration>
                     <mainClass>com.theshivaank.words.auth.HashPassword</mainClass>
                 </configuration>
+                <executions>
+                    <!-- ./mvnw -q test-compile exec:java@local  -> the API on a throwaway local Postgres -->
+                    <execution>
+                        <id>local</id>
+                        <configuration>
+                            <mainClass>com.theshivaank.words.LocalDevServer</mainClass>
+                            <classpathScope>test</classpathScope>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

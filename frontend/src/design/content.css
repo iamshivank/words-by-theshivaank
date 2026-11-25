@@ -1,0 +1,273 @@
+/*
+ * Long-form content (essays, the editor) and the few effects that are easier in CSS than in utilities:
+ * the drop cap, pull quotes, focus-mode dimming, the flying cards and their swinging labels.
+ */
+
+@layer components {
+  /* ---- Reading typography ------------------------------------------------ */
+  .prose-words {
+    font-family: var(--body-font-family);
+    font-size: var(--reading-size);
+    line-height: var(--reading-leading);
+    color: var(--text);
+    max-width: var(--measure);
+    font-optical-sizing: auto;
+    hyphens: auto;
+    overflow-wrap: break-word;
+  }
+  .prose-words > * + * {
+    margin-top: 1.15em;
+  }
+  .prose-words h1,
+  .prose-words h2,
+  .prose-words h3 {
+    font-family: var(--font-serif);
+    font-weight: 340;
+    letter-spacing: var(--tracking-tight);
+    line-height: 1.15;
+    scroll-margin-top: 6rem;
+  }
+  .prose-words h1 {
+    font-size: var(--step-3);
+    margin-top: 2em;
+  }
+  .prose-words h2 {
+    font-size: var(--step-2);
+    margin-top: 2.2em;
+  }
+  .prose-words h3 {
+    font-size: var(--step-1);
+    font-style: italic;
+    margin-top: 1.8em;
+  }
+  .prose-words a {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: var(--hair);
+    text-decoration-color: var(--accent-line);
+    text-underline-offset: 0.22em;
+    transition: text-decoration-color var(--dur-calm) var(--ease-editorial);
+  }
+  .prose-words a:hover {
+    text-decoration-color: var(--accent);
+  }
+  .prose-words strong {
+    font-weight: 560;
+  }
+  .prose-words mark {
+    background: linear-gradient(transparent 58%, var(--accent-soft) 58%);
+    color: inherit;
+    padding: 0 0.08em;
+  }
+  .prose-words blockquote {
+    position: relative;
+    margin: 2.2em 0;
+    padding: 0.2em 0 0.2em 1.4em;
+    font-family: var(--font-serif);
+    font-size: 1.22em;
+    font-style: italic;
+    font-weight: 320;
+    line-height: 1.45;
+    color: var(--text);
+  }
+  .prose-words blockquote::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.35em;
+    bottom: 0.35em;
+    width: var(--hair);
+    background: var(--accent);
+  }
+  .prose-words blockquote p + p {
+    margin-top: 0.6em;
+  }
+  .prose-words ul,
+  .prose-words ol {
+    padding-left: 1.3em;
+  }
+  .prose-words ul {
+    list-style: none;
+  }
+  .prose-words ul > li {
+    position: relative;
+  }
+  .prose-words ul > li::before {
+    content: '';
+    position: absolute;
+    left: -1.05em;
+    top: 0.85em;
+    width: 0.5em;
+    height: var(--hair);
+    background: var(--accent);
+  }
+  .prose-words ol {
+    list-style: decimal;
+  }
+  .prose-words ol > li::marker {
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+    color: var(--text-muted);
+  }
+  .prose-words li + li {
+    margin-top: 0.35em;
+  }
+  .prose-words hr {
+    border: 0;
+    height: auto;
+    margin: 2.6em 0;
+    text-align: center;
+  }
+  .prose-words hr::after {
+    content: '\2022\2003\2022\2003\2022';
+    font-size: 0.7em;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+  }
+  .prose-words code {
+    font-family: var(--font-mono);
+    font-size: 0.82em;
+    padding: 0.1em 0.3em;
+    border: var(--hair) solid var(--hairline-strong);
+    border-radius: var(--radius-hair);
+  }
+  .prose-words pre {
+    font-family: var(--font-mono);
+    font-size: 0.8em;
+    line-height: 1.65;
+    padding: 1.2em 1.4em;
+    overflow-x: auto;
+    border-top: var(--hair) solid var(--hairline-strong);
+    border-bottom: var(--hair) solid var(--hairline-strong);
+  }
+  .prose-words pre code {
+    border: 0;
+    padding: 0;
+    font-size: inherit;
+  }
+  .prose-words img {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin: 2em 0;
+    border-radius: var(--radius-hair);
+  }
+  .prose-words figcaption {
+    margin-top: 0.6em;
+    font-family: var(--font-sans);
+    font-size: var(--step--2);
+    letter-spacing: var(--tracking-meta);
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* Drop cap on the first paragraph of an essay. */
+  .prose-words.has-drop-cap > p:first-of-type::first-letter {
+    float: left;
+    font-family: var(--font-serif);
+    font-size: 4.6em;
+    font-weight: 300;
+    line-height: 0.82;
+    padding: 0.08em 0.1em 0 0;
+    margin-right: 0.04em;
+    color: var(--accent);
+    font-variation-settings: 'opsz' 144;
+  }
+
+  /* ---- Editor ------------------------------------------------------------ */
+  .editor-surface .ProseMirror {
+    outline: none;
+    min-height: 50vh;
+    padding-bottom: 40vh;
+    caret-color: var(--accent);
+  }
+  .editor-surface .ProseMirror > * + * {
+    margin-top: 1.05em;
+  }
+  .editor-surface .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+    color: var(--text-muted);
+    opacity: 0.55;
+    font-style: italic;
+  }
+  .editor-surface .ProseMirror img.ProseMirror-selectednode {
+    outline: var(--hair) solid var(--accent);
+    outline-offset: 4px;
+  }
+  .editor-surface .ProseMirror-gapcursor::after {
+    border-top-color: var(--accent);
+  }
+  /* Focus mode: everything but the paragraph you are in fades back. */
+  .editor-surface.is-focus .ProseMirror > * {
+    opacity: 0.18;
+    transition: opacity 700ms var(--ease-editorial);
+  }
+  .editor-surface.is-focus .ProseMirror > .has-focus {
+    opacity: 1;
+  }
+
+  /* ---- Flying cards on the landing page ---------------------------------- */
+  .flying-card {
+    animation: float-drift var(--drift-duration, 14s) var(--ease-settle) infinite alternate;
+    animation-delay: var(--drift-delay, 0s);
+  }
+  .flying-card:hover,
+  .flying-card:focus-within {
+    animation-play-state: paused;
+  }
+  @keyframes float-drift {
+    0% {
+      translate: 0 0;
+      rotate: var(--tilt-a, -1.5deg);
+    }
+    50% {
+      translate: var(--drift-x, 10px) calc(var(--drift-y, 14px) * -1);
+    }
+    100% {
+      translate: calc(var(--drift-x, 10px) * -0.6) var(--drift-y, 14px);
+      rotate: var(--tilt-b, 1.2deg);
+    }
+  }
+  /* The highlight label hangs from the card on a thread and sways a little. */
+  .flying-tag {
+    transform-origin: 50% 0;
+    animation: tag-sway 3.6s var(--ease-settle) infinite alternate;
+  }
+  .flying-card:hover .flying-tag {
+    animation-duration: 1.2s;
+  }
+  @keyframes tag-sway {
+    from {
+      rotate: -7deg;
+    }
+    to {
+      rotate: 6deg;
+    }
+  }
+
+  /* ---- Small controls ---------------------------------------------------- */
+  .field-area {
+    display: block;
+    width: 100%;
+    background: transparent;
+    resize: vertical;
+    padding: 0.6rem 0;
+    border-bottom: var(--hair) solid var(--hairline-strong);
+    font-family: var(--body-font-family);
+    font-size: var(--step-0);
+    line-height: 1.6;
+    color: var(--text);
+    transition: border-color var(--dur-calm) var(--ease-editorial);
+  }
+  .field-area:focus {
+    border-bottom-color: var(--accent);
+    outline: none;
+  }
+  .field-area::placeholder {
+    color: var(--text-muted);
+    opacity: 0.6;
+  }
+}

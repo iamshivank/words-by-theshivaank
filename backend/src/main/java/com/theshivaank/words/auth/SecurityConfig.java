@@ -1,6 +1,7 @@
 package com.theshivaank.words.auth;
 
 import com.theshivaank.words.config.AppProperties;
+import jakarta.servlet.DispatcherType;
 import java.time.Clock;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -41,8 +42,12 @@ public class SecurityConfig {
                 .requestCache(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Streamed responses (the export) finish on an async dispatch of an already-authorized request.
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/public/entries/*/view").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/uploads/**", "/rss.xml", "/sitemap.xml").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().hasAuthority(JwtCookieAuthFilter.ROLE_OWNER))

@@ -1,6 +1,7 @@
 package com.theshivaank.words.auth;
 
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
+import com.theshivaank.words.account.OwnerAccountService;
 import com.theshivaank.words.config.AppProperties;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
@@ -27,15 +28,18 @@ import org.springframework.stereotype.Service;
 public class JwtService {
 
     static final String ISSUER = "words";
+    static final String VERSION_CLAIM = "ver";
 
     private final JwtEncoder encoder;
     private final JwtDecoder decoder;
     private final AppProperties props;
     private final Clock clock;
+    private final OwnerAccountService accounts;
 
-    public JwtService(AppProperties props, Clock clock) {
+    public JwtService(AppProperties props, Clock clock, OwnerAccountService accounts) {
         this.props = props;
         this.clock = clock;
+        this.accounts = accounts;
         SecretKey key = new SecretKeySpec(props.jwt().secret().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
         this.encoder = new NimbusJwtEncoder(new ImmutableSecret<>(key));
         NimbusJwtDecoder nimbus = NimbusJwtDecoder.withSecretKey(key).macAlgorithm(MacAlgorithm.HS256).build();
@@ -43,7 +47,8 @@ public class JwtService {
         this.decoder = nimbus;
     }
 
-    public String issue(String subject) {
+    /** tokenVersion must match the account's current version; bumping it revokes every older token. */
+    public String issue(String subject, int tokenVersion) {
         Instant now = clock.instant();
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(ISSUER)
@@ -51,16 +56,20 @@ public class JwtService {
                 .id(UUID.randomUUID().toString())
                 .issuedAt(now)
                 .expiresAt(now.plus(props.jwt().ttl()))
+                .claim(VERSION_CLAIM, tokenVersion)
                 .build();
         return encoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
                 .getTokenValue();
     }
 
-    /** Valid, unexpired, and issued for the current owner; anything else is treated as signed out. */
+    /** Valid, unexpired, issued for the current owner and not revoked; anything else is treated as signed out. */
     public Optional<Jwt> verify(String token) {
         try {
             Jwt jwt = decoder.decode(token);
-            return props.owner().email().equalsIgnoreCase(jwt.getSubject()) ? Optional.of(jwt) : Optional.empty();
+            var account = accounts.snapshot();
+            Object version = jwt.getClaim(VERSION_CLAIM);
+            boolean current = version instanceof Number n && n.intValue() == account.tokenVersion();
+            return current && account.email().equalsIgnoreCase(jwt.getSubject()) ? Optional.of(jwt) : Optional.empty();
         } catch (JwtException e) {
             return Optional.empty();
         }

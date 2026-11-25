@@ -77,8 +77,9 @@ public final class StartupCheck {
         }
     }
 
+    /** Same precedence as Spring: system properties (including normalized ones) before the environment. */
     private static String lookup(String key) {
-        String value = System.getenv(key);
-        return value != null ? value : System.getProperty(key);
+        String value = System.getProperty(key);
+        return value != null ? value : System.getenv(key);
     }
 }

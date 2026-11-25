@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/dev.mjs",
+    "dev:local": "node scripts/dev.mjs --local",
     "api:types": "npm --prefix frontend run api:types"
   },
   "dependencies": {

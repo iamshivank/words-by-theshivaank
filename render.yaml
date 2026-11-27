@@ -1,0 +1,33 @@
+# Render Blueprint for the Words API (free plan).
+# Render dashboard: New > Blueprint > pick this repo. It reads this file, asks for the values marked
+# sync: false, builds backend/Dockerfile and gives you https://<name>.onrender.com.
+services:
+  - type: web
+    name: words-api
+    runtime: docker
+    plan: free
+    # Keep the API close to the database: pick the Render region nearest your Neon region.
+    region: singapore
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v1/auth/me
+    autoDeploy: true
+    envVars:
+      # Neon connection string, DIRECT host (no "-pooler"), pasted as is.
+      - key: SPRING_DATASOURCE_URL
+        sync: false
+      - key: OWNER_EMAIL
+        sync: false
+      # bcrypt hash, $ signs included.
+      - key: OWNER_PASSWORD_HASH
+        sync: false
+      # Render generates a random 256 bit value once and keeps it.
+      - key: JWT_SECRET
+        generateValue: true
+      # The Vercel production URL. Used for CORS and for links in rss.xml / sitemap.xml / robots.txt.
+      - key: APP_PUBLIC_URL
+        value: https://words-by-theshivaank.vercel.app
+      # The free instance has 512 MB of RAM; the serial collector has the smallest footprint.
+      - key: JAVA_TOOL_OPTIONS
+        value: -XX:+UseSerialGC -Xss512k

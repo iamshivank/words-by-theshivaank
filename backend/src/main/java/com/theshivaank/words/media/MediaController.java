@@ -9,13 +9,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,8 +29,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * Image uploads. The type is decided by the file's first bytes, never by its name or the browser's claim,
- * and files are stored under random names in UPLOAD_DIR and served from /uploads/.
+ * Image uploads. The type is decided by the file's first bytes, never by its name or the browser's claim.
+ * The bytes are stored in the database under a random name and served from /uploads/{name}, so uploads
+ * survive redeploys on hosts with no persistent disk. Older uploads (data IS NULL) are read from UPLOAD_DIR.
  */
 @RestController
 @Tag(name = "Media")
@@ -58,26 +61,45 @@ public class MediaController {
         Kind kind = sniff(head);
         if (kind == null) throw new BadRequestException("Only JPEG, PNG, GIF, WebP and AVIF images can be uploaded.");
 
-        Files.createDirectories(root);
         String name = UUID.randomUUID() + "." + kind.extension();
-        Path target = root.resolve(name).normalize();
-        if (!target.startsWith(root)) throw new BadRequestException("Bad file name.");
-        try (InputStream in = file.getInputStream()) {
-            Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
-        }
+        byte[] data = file.getBytes();
         String original = file.getOriginalFilename() == null ? null
                 : file.getOriginalFilename().replaceAll("[\\r\\n]", "").strip();
         if (original != null && original.length() > 200) original = original.substring(0, 200);
         return jdbc.sql("""
-                INSERT INTO media (file_name, original_name, path, mime_type, size_bytes)
-                VALUES (:name, :original, :path, :mime, :size)
+                INSERT INTO media (file_name, original_name, path, mime_type, size_bytes, data)
+                VALUES (:name, :original, :path, :mime, :size, :data)
                 RETURNING id, file_name, original_name, mime_type, size_bytes, created_at""")
-                .param("name", name).param("original", original).param("path", target.toString())
-                .param("mime", kind.mime()).param("size", file.getSize())
+                .param("name", name).param("original", original).param("path", "db:" + name)
+                .param("mime", kind.mime()).param("size", data.length).param("data", data)
                 .query((rs, i) -> item(rs.getObject("id", UUID.class), rs.getString("file_name"),
                         rs.getString("original_name"), rs.getString("mime_type"), rs.getLong("size_bytes"),
                         rs.getTimestamp("created_at").toInstant()))
                 .single();
+    }
+
+    private record Stored(String mime, byte[] data) {}
+
+    /** Public: names are random UUIDs and never reused, so responses can be cached forever. */
+    @GetMapping("/uploads/{name:[A-Za-z0-9._-]+}")
+    public ResponseEntity<byte[]> serve(@PathVariable String name) throws IOException {
+        Stored stored = jdbc.sql("SELECT mime_type, data FROM media WHERE file_name = :name").param("name", name)
+                .query((rs, i) -> new Stored(rs.getString("mime_type"), rs.getBytes("data")))
+                .optional()
+                .orElseThrow(() -> new NotFoundException("That file does not exist."));
+        byte[] body = stored.data();
+        if (body == null) {
+            Path file = root.resolve(name).normalize();
+            if (!file.startsWith(root) || !Files.isRegularFile(file)) {
+                throw new NotFoundException("That file does not exist.");
+            }
+            body = Files.readAllBytes(file);
+        }
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(stored.mime()))
+                .cacheControl(CacheControl.maxAge(Duration.ofDays(365)).cachePublic().immutable())
+                .header("X-Content-Type-Options", "nosniff")
+                .body(body);
     }
 
     @GetMapping("/api/v1/media")

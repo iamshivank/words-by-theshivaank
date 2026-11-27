@@ -145,6 +145,18 @@ no key, works in Chrome, Edge and Safari. Say "full stop", "comma", "question ma
 It can be switched off in Preferences. For better accuracy, privacy or voice notes, see the options
 (Whisper, Groq, Deepgram, on-device) in `docs/ideas/IDEAS.md`.
 
+## Autocomplete
+
+While you write a journal entry, essay or note, the editor shows the likely rest of the word or phrase in grey
+after the caret. **Tab** (or **→** at the end of a line) accepts it, **Esc** hides it, and typing on ignores it.
+
+The predictions come from an n-gram model: counts of which word follows one word (bigrams) and which follows a
+pair (trigrams). It learns from your own entries (`GET /api/v1/autocomplete/corpus`, owner only) and from the
+text you are writing, and it is built and run in the browser, so it costs nothing, needs no API key, and your
+writing never goes to a third party. It completes a word from two letters, and only predicts whole next words
+when your history makes them likely (seen at least twice, and at least 40% of what followed that context).
+Switch it off in Preferences → Writing → Autocomplete.
+
 ## Brainstorming agent
 
 `.claude/agents/product-strategist.md` is a Claude Code agent that keeps a prioritized roadmap in
@@ -168,7 +180,7 @@ Code to "use the product-strategist agent" with a question, e.g. "what should I 
 
 ## Deploy
 
-Frontend on Vercel, API on Railway (Docker, `backend/Dockerfile`), database on Neon. Vercel proxies
+Frontend on Vercel, API on Render's free plan (Docker, `render.yaml` + `backend/Dockerfile`), database on Neon. Vercel proxies
 `/api`, `/uploads`, `/rss.xml`, `/sitemap.xml` and `/robots.txt` to the API (`frontend/vercel.json`), so the
 browser sees one origin and the SameSite=Strict session cookie keeps working. Step by step:
 [docs/DEPLOY.md](docs/DEPLOY.md).
@@ -178,7 +190,7 @@ browser sees one origin and the SameSite=Strict session cookie keeps working. St
 - Social previews: the site is a client-rendered SPA, so link previews (Open Graph) need server-rendered
   meta tags for `/writing/:slug`. Meta tags are set in the browser, which search engines read but most
   social crawlers do not.
-- Uploads live on the server's disk (`UPLOAD_DIR`). In production that is a Railway volume mounted at
-  `/data` (see [docs/DEPLOY.md](docs/DEPLOY.md)); without the volume every deploy wipes them.
+- Uploaded images are stored in Postgres (`media.data`), so they survive redeploys on hosts without a disk;
+  uploads made before V7 are still read from `UPLOAD_DIR`. Watch Neon's free storage limit.
 - No footnotes block in the editor yet.
 See `docs/ideas/IDEAS.md` for the full launch checklist.

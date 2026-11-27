@@ -15,6 +15,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   typewriterScrolling: true,
   dictation: true,
   dailyPrompt: true,
+  autocomplete: true,
 };
 
 /**

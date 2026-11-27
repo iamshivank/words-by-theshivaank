@@ -38,6 +38,7 @@ export type Preferences = {
   typewriterScrolling: boolean;
   dictation: boolean;
   dailyPrompt: boolean;
+  autocomplete: boolean;
 };
 export type Writing = { dailyWordGoal: number; reminderText: string };
 

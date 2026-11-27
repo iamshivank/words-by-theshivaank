@@ -12,7 +12,13 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 import { uploadImage } from '@/api/admin';
 import { errorMessage } from '@/api/client';
 import { reportSession, startSession, useOverview, useRandomQuote, useSaveQuote } from '@/api/desk';
-import { saveEntry, toInput, useDeleteEntry, useInvalidateWriting } from '@/api/entries';
+import {
+  saveEntry,
+  toInput,
+  useAutocompleteCorpus,
+  useDeleteEntry,
+  useInvalidateWriting,
+} from '@/api/entries';
 import { usePreferences } from '@/api/settings';
 import type { EntryDetail, EntryInput, JSONContent } from '@/api/types';
 import { EASE, toast } from '@/design';
@@ -20,6 +26,8 @@ import { cn } from '@/lib/cn';
 import { formatNumber, pad2 } from '@/lib/format';
 import { isModKey } from '@/lib/hooks';
 import { DetailsPanel } from './DetailsPanel';
+import { InlineSuggestion } from './inlineSuggestion';
+import { NGramModel, Predictor } from './predict';
 import { SlashMenu } from './SlashMenu';
 import { filterSlash, SLASH_ITEMS, type SlashItem } from './slashItems';
 import { useDictation } from './useDictation';
@@ -240,6 +248,39 @@ export function WritingRoom({ entry }: { entry: EntryDetail }) {
     setSlash(null);
   }, []);
 
+  // Autocomplete: a model of past writing (fetched once) plus one of this document, retrained as you type.
+  // They live in refs because the editor's callbacks are created once and must see the latest models.
+  const corpus = useAutocompleteCorpus(prefs.autocomplete);
+  const pastModel = useMemo(() => new NGramModel(corpus.data?.texts ?? []), [corpus.data]);
+  const pastModelRef = useRef<NGramModel | null>(null);
+  const docModel = useRef<NGramModel | null>(null);
+  const predictor = useRef<Predictor | null>(null);
+  const rebuildPredictor = useCallback(() => {
+    const models = [pastModelRef.current, docModel.current].filter((m) => m !== null);
+    predictor.current = new Predictor(models);
+  }, []);
+  useEffect(() => {
+    pastModelRef.current = pastModel;
+    rebuildPredictor();
+  }, [pastModel, rebuildPredictor]);
+  const retrainTimer = useRef(0);
+  const retrainDoc = useCallback(
+    (text: string) => {
+      window.clearTimeout(retrainTimer.current);
+      retrainTimer.current = window.setTimeout(() => {
+        docModel.current = new NGramModel([text]);
+        rebuildPredictor();
+      }, 800);
+    },
+    [rebuildPredictor],
+  );
+  useEffect(
+    () => () => {
+      window.clearTimeout(retrainTimer.current);
+    },
+    [],
+  );
+
   const typewriterRef = useRef(typewriter);
   useEffect(() => {
     typewriterRef.current = typewriter;
@@ -262,6 +303,7 @@ export function WritingRoom({ entry }: { entry: EntryDetail }) {
       Image.configure({ inline: false }),
       Highlight,
       Typography,
+      InlineSuggestion,
     ],
     content: entry.contentJson.type === 'doc' ? entry.contentJson : entry.contentHtml,
     editorProps: {
@@ -310,12 +352,14 @@ export function WritingRoom({ entry }: { entry: EntryDetail }) {
     onCreate: ({ editor: e }) => {
       // In development React mounts twice; the discarded editor still fires onCreate later.
       if (e.isDestroyed) return;
+      retrainDoc(e.getText());
       session.current.baseline = wordsOf(e);
       setBaseline(wordsOf(e));
       setWords(wordsOf(e));
       setIsEmpty(e.isEmpty);
     },
     onUpdate: ({ editor: e }) => {
+      retrainDoc(e.getText());
       setWords(wordsOf(e));
       setIsEmpty(e.isEmpty);
       ensureSession();
@@ -356,6 +400,14 @@ export function WritingRoom({ entry }: { entry: EntryDetail }) {
   useEffect(() => {
     editorRef.current = editor;
   }, [editor]);
+
+  // Hand the predictor and the preference to the autocomplete extension.
+  useEffect(() => {
+    editor.commands.setInlineSuggestion(
+      (before) => predictor.current?.suggest(before) ?? null,
+      prefs.autocomplete,
+    );
+  }, [editor, prefs.autocomplete]);
 
   // Offer to restore a newer, unsynced local copy (e.g. after the tab closed while offline).
   useEffect(() => {
@@ -497,7 +549,8 @@ export function WritingRoom({ entry }: { entry: EntryDetail }) {
       ) {
         event.preventDefault();
         dictation.toggle();
-      } else if (event.key === 'Escape' && !slashRef.current) {
+      } else if (event.key === 'Escape' && !slashRef.current && !event.defaultPrevented) {
+        // defaultPrevented: the editor already used this Escape (e.g. to hide a suggestion).
         if (showDetails) setShowDetails(false);
         else if (focusMode) setFocusMode(false);
         else leave();

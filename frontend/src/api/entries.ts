@@ -205,3 +205,16 @@ export function toInput(e: EntryDetail): EntryInput {
     featured: e.featured,
   };
 }
+
+// ---- Autocomplete ------------------------------------------------------------------
+
+/** The owner's past writing as plain text; the editor trains its word predictions on it. */
+export function useAutocompleteCorpus(enabled: boolean) {
+  return useQuery({
+    queryKey: ['autocomplete', 'corpus'],
+    queryFn: () => api<{ texts: string[] }>('/autocomplete/corpus'),
+    enabled,
+    staleTime: 10 * 60_000,
+    retry: false,
+  });
+}

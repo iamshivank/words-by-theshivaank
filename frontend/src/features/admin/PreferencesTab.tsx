@@ -78,6 +78,12 @@ const GROUPS: {
         description: 'Speak instead of typing (Chrome, Edge and Safari). Ctrl Shift D.',
       },
       {
+        key: 'autocomplete',
+        label: 'Autocomplete',
+        description:
+          'Suggest the rest of a word or phrase as you type, learned from your own writing. Tab accepts.',
+      },
+      {
         key: 'dailyPrompt',
         label: 'Daily prompt on the Desk',
         description: 'One reflective question a day.',

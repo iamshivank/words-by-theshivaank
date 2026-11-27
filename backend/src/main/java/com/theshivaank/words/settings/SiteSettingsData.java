@@ -69,10 +69,11 @@ public record SiteSettingsData(
             Boolean editorQuotes,
             Boolean typewriterScrolling,
             Boolean dictation,
-            Boolean dailyPrompt) {
+            Boolean dailyPrompt,
+            Boolean autocomplete) {
 
         public static Preferences defaults() {
-            return new Preferences(true, true, true, true, true, true, true, false, true, true, true, true, true, true);
+            return new Preferences(true, true, true, true, true, true, true, false, true, true, true, true, true, true, true);
         }
 
         Preferences withDefaults() {
@@ -83,7 +84,8 @@ public record SiteSettingsData(
                     or(tableOfContents, d.tableOfContents), or(showReadCounts, d.showReadCounts),
                     or(showStreakOnLanding, d.showStreakOnLanding), or(rssFeed, d.rssFeed),
                     or(editorQuotes, d.editorQuotes), or(typewriterScrolling, d.typewriterScrolling),
-                    or(dictation, d.dictation), or(dailyPrompt, d.dailyPrompt));
+                    or(dictation, d.dictation), or(dailyPrompt, d.dailyPrompt),
+                    or(autocomplete, d.autocomplete));
         }
 
         private static Boolean or(Boolean value, Boolean fallback) {

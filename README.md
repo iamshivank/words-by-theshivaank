@@ -145,6 +145,18 @@ no key, works in Chrome, Edge and Safari. Say "full stop", "comma", "question ma
 It can be switched off in Preferences. For better accuracy, privacy or voice notes, see the options
 (Whisper, Groq, Deepgram, on-device) in `docs/ideas/IDEAS.md`.
 
+## Autocomplete
+
+While you write a journal entry, essay or note, the editor shows the likely rest of the word or phrase in grey
+after the caret. **Tab** (or **→** at the end of a line) accepts it, **Esc** hides it, and typing on ignores it.
+
+The predictions come from an n-gram model: counts of which word follows one word (bigrams) and which follows a
+pair (trigrams). It learns from your own entries (`GET /api/v1/autocomplete/corpus`, owner only) and from the
+text you are writing, and it is built and run in the browser, so it costs nothing, needs no API key, and your
+writing never goes to a third party. It completes a word from two letters, and only predicts whole next words
+when your history makes them likely (seen at least twice, and at least 40% of what followed that context).
+Switch it off in Preferences → Writing → Autocomplete.
+
 ## Brainstorming agent
 
 `.claude/agents/product-strategist.md` is a Claude Code agent that keeps a prioritized roadmap in

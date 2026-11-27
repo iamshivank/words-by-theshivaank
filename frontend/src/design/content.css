@@ -18,6 +18,29 @@
   .prose-words > * + * {
     margin-top: 1.15em;
   }
+
+  /* ---- Editor autocomplete: the predicted rest of the word or phrase, after the caret --------- */
+  .inline-suggestion {
+    color: var(--text-muted);
+    opacity: 0.75;
+    pointer-events: none;
+    user-select: none;
+  }
+  .inline-suggestion-hint {
+    margin-left: 0.4em;
+    padding: 0 0.35em;
+    border: 1px solid var(--hairline);
+    border-radius: 4px;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.6em;
+    vertical-align: 0.2em;
+    letter-spacing: 0.04em;
+  }
+  @media (pointer: coarse) {
+    .inline-suggestion-hint {
+      display: none;
+    }
+  }
   .prose-words h1,
   .prose-words h2,
   .prose-words h3 {
